@@ -1,69 +1,131 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { Check, ListTodo, Trash } from "lucide-react";
+
+type Task = {
+  id: string;
+  title: string;
+  completed: boolean;
+};
+
+type Filter = "all" | "active" | "completed";
+
+const Home = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [title, setTitle] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
+
+  const addTask = (e: React.SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (title.trim() === "") return;
+
+    const newTask: Task = {
+      id: crypto.randomUUID(),
+      title: title.trim(),
+      completed: false,
+    };
+    setTasks([...tasks, newTask]);
+    setTitle("");
+  };
+
+  const toggleTask = (id: string) => {
+    setTasks(
+      tasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
+
+  const deleteTask = (id: string) => {
+    setTasks(tasks.filter((task) => task.id !== id));
+  };
+
+  const visibleTasks = tasks.filter((task) => {
+    if (filter === "active") return !task.completed;
+    if (filter === "completed") return task.completed;
+    return true;
+  });
+
+  const filters: Filter[] = ["all", "active", "completed"];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen bg-[#EAF0EB] flex justify-center p-10">
+      <div className="w-full max-w-xl h-fit rounded-3xl bg-white p-8 shadow">
+        <header className="flex items-center gap-3 mb-6">
+          <ListTodo className="text-green-700" />
+          <h1 className="text-2xl font-semibold">My tasks.</h1>
+        </header>
+
+        <form onSubmit={addTask} className="flex gap-2 mb-6">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="What needs to get done?"
+            className="flex-1 rounded-xl border border-gray-200 p-3 outline-none"
+          />
+          <button
+            type="submit"
+            className="rounded-xl bg-green-700 px-5 text-[#473e3e] font-semibold"
+          >
+            Add task
+          </button>
+        </form>
+
+        <div className="flex justify-between border-b border-gray-200 mb-4">
+          <div className="flex gap-6">
+            {filters.map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`pb-3 capitalize font-semibold ${
+                  filter === f
+                    ? "border-b-2 border-green-700 text-green-700"
+                    : "text-gray-500"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <span className="text-sm text-gray-500">{visibleTasks.length}</span>
+        </div>
+
+        {visibleTasks.length === 0 ? (
+          <p className="text-center text-gray-500 py-10">
+            Your list starts here. Add your first task above.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {visibleTasks.map((task) => (
+              <li key={task.id} className="flex items-center gap-3 p-2">
+                <button
+                  onClick={() => toggleTask(task.id)}
+                  className={`flex h-6 w-6 items-center justify-center rounded-full border ${
+                    task.completed ? "bg-green-700 border-green-700" : "border-gray-300"
+                  }`}
+                >
+                  {task.completed && <Check size={14} className="text-white" />}
+                </button>
+
+                <span
+                  className={`flex-1 ${
+                    task.completed ? "line-through text-gray-400" : ""
+                  }`}
+                >
+                  {task.title}
+                </span>
+
+                <button onClick={() => deleteTask(task.id)}>
+                  <Trash size={16} className="text-gray-400" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </main>
   );
-}
+};
+
+export default Home;
